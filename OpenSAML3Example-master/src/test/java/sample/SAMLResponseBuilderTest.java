@@ -41,14 +41,11 @@ class SAMLResponseBuilderTest {
 	void validateSAMLResponse() throws FileNotFoundException, CertificateException, SecurityException {
 		String encodedEncryptedSignedSAMLXMLString = generateEncodedEncryptedSignedSAMLXMLString();
 
-		System.out.println("encodedEncryptedSignedSAMLXMLString >> " + encodedEncryptedSignedSAMLXMLString);
+//		System.out.println("encodedEncryptedSignedSAMLXMLString >> " + encodedEncryptedSignedSAMLXMLString);
 
 		String decodeString = SAMLUtil.base64Decode(encodedEncryptedSignedSAMLXMLString);
-		System.out.println("decodeString >> " + decodeString);
-//		EncryptedAssertion encryptedAssertion = SAMLUtil.getSamlEncryptedAssertion(decodeString);
-//		Assertion assertion = SAMLUtil.decryptAssertion(encryptedAssertion, CredentialManager.loadCredential());
-//		Assertions.assertTrue(SAMLUtil.isValidAssertionSignature(assertion, CredentialManager.loadCredential()), "Signature must be valid");
-//		System.out.println(SAMLUtil.stringifySAMLObject(assertion));
+		// System.out.println("decodeString >> " + decodeString);
+
 	}
 	
 	public static String generateEncodedEncryptedSignedSAMLXMLString() throws FileNotFoundException, CertificateException, SecurityException {
@@ -56,11 +53,10 @@ class SAMLResponseBuilderTest {
 		Response response = samlResponse.buildResponse();
 		response.setInResponseTo("abcd");
 		Assertion assertion = samlResponse.buildAssertion(response.getID(), response.getIssueInstant(), "idCome", "idTwo");
-		SAMLUtil.signAssertion(assertion, CredentialManager.loadCredential());
-//		EncryptedAssertion encryptedAssertion = SAMLUtil.encryptAssertion(assertion, publicKeyCredential);
-		// response.getEncryptedAssertions().add(encryptedAssertion);
-		 response.getAssertions().add(assertion);
+		response.getAssertions().add(assertion);
 		String strResponse = SAMLUtil.stringifySAMLObject(response);
-		return SAMLUtil.base64Encode(strResponse);		
+		String base64 = SAMLUtil.base64Encode(strResponse);
+		System.out.println("base64: " + base64);
+		return base64;		
 	}
 }

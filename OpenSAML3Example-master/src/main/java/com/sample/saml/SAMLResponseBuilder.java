@@ -1,5 +1,8 @@
 package com.sample.saml;
 
+import java.io.FileNotFoundException;
+import java.security.cert.CertificateException;
+
 import org.joda.time.DateTime;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.core.AttributeStatement;
@@ -17,13 +20,14 @@ import org.opensaml.saml.saml2.core.StatusCode;
 import org.opensaml.saml.saml2.core.Subject;
 import org.opensaml.saml.saml2.core.SubjectConfirmation;
 import org.opensaml.saml.saml2.core.SubjectConfirmationData;
+import org.opensaml.security.SecurityException;
 
 public class SAMLResponseBuilder {
 	public static String destination = "SSOWebsite.com";
 
 	public static String IDP_ENTITY_ID = "oasisdev";
 	public static String NAME_ID = "SomeAccount";
-	public static int validDurationInSeconds = 3000;
+	public static int validDurationInSeconds = 5000;
 
 	public Response buildResponse() {		
 		Response samlResponse = SAMLUtil.buildSAMLObject(Response.class);
@@ -61,6 +65,23 @@ public class SAMLResponseBuilder {
 		assertion.setSubject(buildSubject(issueInstance));
 		assertion.getAuthnStatements().add(buildAuthnStatement(issueInstance));
 		assertion.getAttributeStatements().add(buildAttributeStatement(idOne, idTwo));
+		try {
+			
+			SAMLUtil.signAssertion(assertion, CredentialManager.loadCredential());
+			boolean isValid = SAMLUtil.isValidAssertionSignature(assertion, CredentialManager.loadCredential());
+			System.out.println("isValid " + isValid);
+			SAMLUtil.stringifySAMLObject(assertion);
+			isValid = SAMLUtil.isValidAssertionSignature(assertion, CredentialManager.loadCredential());
+			System.out.println("isValid " + isValid);
+			
+			
+		} catch (FileNotFoundException | CertificateException | SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		EncryptedAssertion encryptedAssertion = SAMLUtil.encryptAssertion(assertion, publicKeyCredential);
+		// response.getEncryptedAssertions().add(encryptedAssertion);
+		 
 		return assertion;
 	}
 	

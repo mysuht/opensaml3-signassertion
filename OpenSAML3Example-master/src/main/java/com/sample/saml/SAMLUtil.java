@@ -2,6 +2,7 @@ package com.sample.saml;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -13,11 +14,13 @@ import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -61,6 +64,7 @@ import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.opensaml.xmlsec.signature.support.Signer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import net.shibboleth.utilities.java.support.security.RandomIdentifierGenerationStrategy;
 
@@ -108,42 +112,85 @@ public class SAMLUtil {
         return attribute;
     }
 
-	public static EncryptedAssertion encryptAssertion(Assertion assertion, X509Credential cred) {
-		DataEncryptionParameters encryptionParameters = new DataEncryptionParameters();
-		encryptionParameters.setAlgorithm(EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256);
+	
 
-		KeyEncryptionParameters keyEncryptionParameters = new KeyEncryptionParameters();
-		keyEncryptionParameters.setEncryptionCredential(cred);
-		keyEncryptionParameters.setAlgorithm(EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSAOAEP);
+    // Your other methods...
 
-		Encrypter encrypter = new Encrypter(encryptionParameters, keyEncryptionParameters);
-		encrypter.setKeyPlacement(Encrypter.KeyPlacement.INLINE);
-
-		try {
-			EncryptedAssertion encryptedAssertion = encrypter.encrypt(assertion);
-			return encryptedAssertion;
-		} catch (EncryptionException e) {
-			throw new RuntimeException(e);
-		}
-	}
 	 
-	public static void signAssertion(Assertion assertion, X509Credential cred) throws FileNotFoundException, CertificateException, SecurityException {
+	public static void signAssertion(Assertion assertion, X509Credential cred) 
+			throws FileNotFoundException, CertificateException, SecurityException {
 		Signature signature = prepareSignature(cred);
+		signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
 		assertion.setSignature(signature);
 		try {
 			XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(assertion).marshall(assertion);
 		} catch (MarshallingException e) {
 			throw new RuntimeException(e);
 		}
-
+		
 		try {
 			Signer.signObject(signature);
 		} catch (SignatureException e) {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	
+	
+	// Method to convert DOM Document to String
+	private static String docToString(Document doc) {
+	    // Convert DOM document to string
+	    StringWriter writer = new StringWriter();
+	    try {
+	        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+	        transformer.transform(new DOMSource(doc), new StreamResult(writer));
+	    } catch (TransformerException e) {
+	        // Handle transformer exception
+	    }
+	    return writer.toString();
+	}
+
+	// Method to convert String to DOM Document
+	private static Document docFromString(String xmlString) {
+	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+	    DocumentBuilder builder = null;
+	        try {
+				builder = factory.newDocumentBuilder();
+			} catch (ParserConfigurationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	        try {
+				return builder.parse(new ByteArrayInputStream(xmlString.getBytes()));
+			} catch (SAXException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    
+	    return null;
+	}
+
+	// Method to sanitize XML content
+	private static String sanitizeXml(String xmlString) {
+	    // Remove "&#13;" characters from the XML string
+	    return xmlString.replaceAll("&#13;", "");
+	}
 
 	protected static Signature prepareSignature(Credential signCredential) throws SecurityException, SecurityException {
+		Signature signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
+				.getBuilder(Signature.DEFAULT_ELEMENT_NAME).buildObject(Signature.DEFAULT_ELEMENT_NAME);
+		signature.setSigningCredential(signCredential);
+		signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
+		signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
+		X509KeyInfoGeneratorFactory x509KeyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
+		x509KeyInfoGeneratorFactory.setEmitEntityCertificate(true);
+		KeyInfo keyInfo = x509KeyInfoGeneratorFactory.newInstance().generate(signCredential);
+		signature.setKeyInfo(keyInfo);
+		return signature;
+	}
+	
+	
+	protected static Signature generateSignature(Credential signCredential) throws SecurityException, SecurityException {
 		Signature signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
 				.getBuilder(Signature.DEFAULT_ELEMENT_NAME).buildObject(Signature.DEFAULT_ELEMENT_NAME);
 		signature.setSigningCredential(signCredential);
