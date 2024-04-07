@@ -44,6 +44,10 @@ class SAMLResponseBuilderTest {
 //		System.out.println("encodedEncryptedSignedSAMLXMLString >> " + encodedEncryptedSignedSAMLXMLString);
 
 		String decodeString = SAMLUtil.base64Decode(encodedEncryptedSignedSAMLXMLString);
+		
+		Assertion assertion = SAMLUtil.getSamlAssertion(decodeString);
+		
+		Assertions.assertTrue(SAMLUtil.isValidAssertionSignature(assertion, CredentialManager.loadCredential()), "Signature must be valid");
 		// System.out.println("decodeString >> " + decodeString);
 
 	}

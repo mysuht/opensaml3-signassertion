@@ -46,7 +46,9 @@ import org.opensaml.saml.saml2.encryption.Encrypter;
 import org.opensaml.saml.security.impl.SAMLSignatureProfileValidator;
 import org.opensaml.security.SecurityException;
 import org.opensaml.security.credential.Credential;
+import org.opensaml.security.x509.BasicX509Credential;
 import org.opensaml.security.x509.X509Credential;
+import org.opensaml.xmlsec.SignatureSigningParameters;
 import org.opensaml.xmlsec.encryption.support.DataEncryptionParameters;
 import org.opensaml.xmlsec.encryption.support.DecryptionException;
 import org.opensaml.xmlsec.encryption.support.EncryptionConstants;
@@ -60,6 +62,7 @@ import org.opensaml.xmlsec.signature.impl.KeyInfoBuilder;
 import org.opensaml.xmlsec.signature.impl.X509DataBuilder;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 import org.opensaml.xmlsec.signature.support.SignatureException;
+import org.opensaml.xmlsec.signature.support.SignatureSupport;
 import org.opensaml.xmlsec.signature.support.SignatureValidator;
 import org.opensaml.xmlsec.signature.support.Signer;
 import org.w3c.dom.Document;
@@ -121,12 +124,29 @@ public class SAMLUtil {
 			throws FileNotFoundException, CertificateException, SecurityException {
 		Signature signature = prepareSignature(cred);
 		signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
-		assertion.setSignature(signature);
+		signature.setSigningCredential(cred);
+		
+		
+
+		// Set the signing credential and other signature parameters
+	    SignatureSigningParameters parameters = new SignatureSigningParameters();
+	    parameters.setSigningCredential(cred);
+	    parameters.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
+	    parameters.setSignatureCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
+	    parameters.setSignatureReferenceDigestMethod(SignatureConstants.ALGO_ID_DIGEST_SHA1); // Set the digest algorithm to SHA-256
+		
+
+	    assertion.setSignature(signature);
+	    
+	  
 		try {
 			XMLObjectProviderRegistrySupport.getMarshallerFactory().getMarshaller(assertion).marshall(assertion);
 		} catch (MarshallingException e) {
 			throw new RuntimeException(e);
 		}
+		
+		
+		
 		
 		try {
 			Signer.signObject(signature);
@@ -331,6 +351,7 @@ public class SAMLUtil {
 
             transformer.transform(source, result);
             xmlString = result.getWriter().toString();
+            xmlString.replace("&#13;", "").replace("\r", "");
         } catch (TransformerConfigurationException e) {
             e.printStackTrace();
         } catch (TransformerException e) {
@@ -338,4 +359,37 @@ public class SAMLUtil {
         }
         return xmlString;
     }
+    
+    
+    private static Assertion getSamlAssertion(Response response) {
+    	Assertion assertions = null;
+    	if(response!=null) {
+    		List<Assertion> encryptedAssertions = response.getAssertions();
+    		if(encryptedAssertions.size()>0) {
+    			assertions = response.getAssertions().get(0);
+    		}
+    	}
+    	System.out.println("assertions > " + assertions);
+        return assertions;
+    }
+    
+    
+    public static Assertion getSamlAssertion(String samlResponse){
+		Response response = null;
+		try {
+			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+			documentBuilderFactory.setNamespaceAware(true);
+			DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
+			UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
+			Document document = docBuilder.parse(new ByteArrayInputStream(samlResponse.getBytes("UTF-8")));
+
+			Element element = document.getDocumentElement();
+			Unmarshaller unmarshaller = unmarshallerFactory.getUnmarshaller(element);
+			XMLObject responseXmlObj = unmarshaller.unmarshall(element);
+			response = (Response) responseXmlObj;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return getSamlAssertion(response);
+	}
 }
