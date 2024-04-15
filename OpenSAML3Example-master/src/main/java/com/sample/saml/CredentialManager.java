@@ -22,10 +22,10 @@ public class CredentialManager {
     private static final String CRT_FILE_PATH = "./credentials/mycertificate.crt";
     private static final String PK_FILE_PATH = "./credentials/pcks8key.der";
 
-    static {
-        System.setProperty("org.apache.xml.security.ignoreLineBreaks", "true");
-        System.setProperty("com.sun.org.apache.xml.internal.security.ignoreLineBreaks", "true");
-    }
+//    static {
+//        System.setProperty("org.apache.xml.security.ignoreLineBreaks", "true");
+//        System.setProperty("com.sun.org.apache.xml.internal.security.ignoreLineBreaks", "true");
+//    }
 
     public static X509Credential loadCredential() {
         try {

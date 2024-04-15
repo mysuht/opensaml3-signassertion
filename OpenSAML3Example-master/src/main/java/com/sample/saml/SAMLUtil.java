@@ -251,143 +251,7 @@ public class SAMLUtil {
 	}
 	
 	
-	
-	// Method to convert DOM Document to String
-	private static String docToString(Document doc) {
-	    // Convert DOM document to string
-	    StringWriter writer = new StringWriter();
-	    try {
-	        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-	        transformer.transform(new DOMSource(doc), new StreamResult(writer));
-	    } catch (TransformerException e) {
-	        // Handle transformer exception
-	    }
-	    return writer.toString();
-	}
 
-	// Method to convert String to DOM Document
-	private static Document docFromString(String xmlString) {
-	    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-	    DocumentBuilder builder = null;
-	        try {
-				builder = factory.newDocumentBuilder();
-			} catch (ParserConfigurationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	        try {
-				return builder.parse(new ByteArrayInputStream(xmlString.getBytes()));
-			} catch (SAXException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-	    
-	    return null;
-	}
-
-	// Method to sanitize XML content
-	private static String sanitizeXml(String xmlString) {
-	    // Remove "&#13;" characters from the XML string
-	    return xmlString.replaceAll("&#13;", "");
-	}
-
-	protected static Signature prepareSignature(Credential signCredential) throws SecurityException, SecurityException {
-		Signature signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
-				.getBuilder(Signature.DEFAULT_ELEMENT_NAME).buildObject(Signature.DEFAULT_ELEMENT_NAME);
-		signature.setSigningCredential(signCredential);
-		signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
-		signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-		X509KeyInfoGeneratorFactory x509KeyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
-		x509KeyInfoGeneratorFactory.setEmitEntityCertificate(true);
-		KeyInfo keyInfo = x509KeyInfoGeneratorFactory.newInstance().generate(signCredential);
-		signature.setKeyInfo(keyInfo);
-		return signature;
-	}
-	
-	
-	protected static Signature generateSignature(Credential signCredential) throws SecurityException, SecurityException {
-		Signature signature = (Signature) XMLObjectProviderRegistrySupport.getBuilderFactory()
-				.getBuilder(Signature.DEFAULT_ELEMENT_NAME).buildObject(Signature.DEFAULT_ELEMENT_NAME);
-		signature.setSigningCredential(signCredential);
-		signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
-		signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-		X509KeyInfoGeneratorFactory x509KeyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
-		x509KeyInfoGeneratorFactory.setEmitEntityCertificate(true);
-		KeyInfo keyInfo = x509KeyInfoGeneratorFactory.newInstance().generate(signCredential);
-		signature.setKeyInfo(keyInfo);
-		return signature;
-	}
-
-//	private static Signature getSignature( X509Credential cred) throws FileNotFoundException, CertificateException {
-//		Signature signature = buildSAMLObject(Signature.class);
-//		signature.setSigningCredential(cred);
-//		signature.setSignatureAlgorithm(SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1);
-//		signature.setCanonicalizationAlgorithm(SignatureConstants.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-//		signature.setKeyInfo(getKeyInfo());
-//		return signature;
-//	}
-
-//	private static KeyInfo getKeyInfo() throws FileNotFoundException, CertificateException {
-//		KeyInfoBuilder keyInfoBuilder = new KeyInfoBuilder();
-//		KeyInfo keyInfo = keyInfoBuilder.buildObject();
-//
-//		// Create KeyValue containing public key
-//		KeyValue keyValue = keyInfoBuilder.buildKeyValue(credential.getPublicKey());
-//		keyInfo.getKeyValues().add(keyValue);
-//
-//		// Create X509Data containing X509 certificate
-//		X509DataBuilder x509DataBuilder = new X509DataBuilder();
-//		X509Data x509Data = x509DataBuilder.buildObject();
-//		org.opensaml.xmlsec.signature.X509Certificate xmlsecCert = x509DataBuilder.buildX509Certificate();
-//		xmlsecCert.setValue(CredentialManager.loadCredential().getEntityCertificate().getEncoded());
-//		x509Data.getX509Certificates().add(xmlsecCert);
-//		keyInfo.getX509Datas().add(x509Data);
-//
-//		return keyInfo;
-//	}
-
-	public static EncryptedAssertion getEncryptedAssertion(Response response) {
-    	EncryptedAssertion encryptedAssertion = null;
-    	if(response!=null) {
-    		List<EncryptedAssertion> encryptedAssertions = response.getEncryptedAssertions();
-    		if(encryptedAssertions.size()>0) {
-    			encryptedAssertion = response.getEncryptedAssertions().get(0);
-    		}
-    	}
-        return encryptedAssertion;
-    }
-    
-	public static EncryptedAssertion getSamlEncryptedAssertion(String samlResponse){
-		Response response = null;
-		try {
-			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-			documentBuilderFactory.setNamespaceAware(true);
-			DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
-			UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
-			Document document = docBuilder.parse(new ByteArrayInputStream(samlResponse.getBytes("UTF-8")));
-
-			Element element = document.getDocumentElement();
-			XMLObject responseXmlObj = unmarshallerElement(unmarshallerFactory, element);
-			response = (Response) responseXmlObj;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return getEncryptedAssertion(response);
-	}
-	
-    public static Assertion decryptAssertion(EncryptedAssertion encryptedAssertion, X509Credential privateKeyCredential) {
-        StaticKeyInfoCredentialResolver keyInfoCredentialResolver = new StaticKeyInfoCredentialResolver(privateKeyCredential);
-
-        Decrypter decrypter = new Decrypter(null, keyInfoCredentialResolver, new InlineEncryptedKeyResolver());
-        decrypter.setRootInNewDocument(true);
-
-        try {
-            return decrypter.decrypt(encryptedAssertion);
-        } catch (DecryptionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
     public static boolean isValidAssertionSignature(Assertion assertion, X509Credential publicKeyCredential) {
     	boolean isValid=false;
         if (!assertion.isSigned()) {
@@ -457,23 +321,6 @@ public class SAMLUtil {
         return xmlString;
     }
 
-	void abc (Document document){
-		// Get the ds:X509Certificate element
-		Element x509CertElement = (Element) document.getElementsByTagName("ds:X509Certificate").item(0);
-
-		// Get the certificate content and remove line breaks
-		String certContentWithLineBreaks = x509CertElement.getTextContent();
-		String certContent = certContentWithLineBreaks.replaceAll("\\s", "");
-		System.out.println("crtContent_before_decode : " + certContent);
-
-		// Update the document to remove line breaks
-		x509CertElement.setTextContent(certContent);
-
-		// Decode and print the certificate content
-		String crtContent = base64Decode(certContent);
-
-		System.out.println("crtContent : " + crtContent);
-	}
     
     
     private static Assertion getSamlAssertion(Response response) {
@@ -504,13 +351,8 @@ public class SAMLUtil {
 
 			DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
 
-
-
 			UnmarshallerFactory unmarshallerFactory = XMLObjectProviderRegistrySupport.getUnmarshallerFactory();
 			Document document = docBuilder.parse(new ByteArrayInputStream(samlResponse.getBytes("UTF-8")));
-
-
-
 
 			Element element = document.getDocumentElement();
 			XMLObject responseXmlObj = unmarshallerElement(unmarshallerFactory, element);

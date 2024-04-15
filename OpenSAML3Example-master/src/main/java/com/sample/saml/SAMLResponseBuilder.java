@@ -137,8 +137,7 @@ public class SAMLResponseBuilder {
 	private Subject buildSubject(DateTime issueInstance) {
 
 //		XMLObjectBuilderFactory builderFactory = org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport.getBuilderFactory();
-		Subject subject =  new SubjectBuilder().buildObject();  //SAMLUtil.buildSAMLObject(Subject.class);
-		subject = SAMLUtil.buildSAMLObjectWithoutP(Subject.class);
+		Subject subject = SAMLUtil.buildSAMLObjectWithoutP(Subject.class);   //SAMLUtil.buildSAMLObject(Subject.class);
 		NameID nameID = SAMLUtil.buildSAMLObjectWithoutP(NameID.class);
 		nameID.setValue(NAME_ID);
 		nameID.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
