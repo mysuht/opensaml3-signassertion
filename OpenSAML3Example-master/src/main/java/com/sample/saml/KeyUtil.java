@@ -30,6 +30,10 @@ public class KeyUtil {
 	private static String p12KeystorePassword = "password";
 	private static String jksFile = "./keystore/keystore.p12";
 	private static String privateKeyAlias = "alias";
+
+	static {
+		System.setProperty("org.apache.xml.security.ignoreLineBreaks", "true");
+	}
 	
 	public static KeyPair getKeyPair() {
 		KeyPair keyPair=null;
@@ -83,7 +87,7 @@ public class KeyUtil {
 
 	public static X509Credential getCredential()
 			throws NoSuchAlgorithmException, UnrecoverableEntryException, KeyStoreException, CertificateException, IOException {
-		X509Credential basicCredential = CredentialManager.getCredential();
+		X509Credential basicCredential = CredentialManager.loadCredential();
 //		KeyStore ks = getKeyStore();
 //		char[] pass = p12KeystorePassword.toCharArray();
 //		KeyStore.PrivateKeyEntry pkEntry = null;

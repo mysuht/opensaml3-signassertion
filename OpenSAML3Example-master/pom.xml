@@ -8,8 +8,8 @@
 	<name>SAML - sample</name>
 	<properties>
 		<!-- maven-compiler-plugin -->
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+		<maven.compiler.source>17</maven.compiler.source>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -26,7 +26,30 @@
 			<groupId>org.opensaml</groupId>
 			<artifactId>opensaml-saml-impl</artifactId>
 			<version>3.3.0</version>
+			<exclusions>
+				<!-- Fix CVE-2020-13936 by replacing velocity with new version of velocity-engine-core.
+                     TODO Remove this property after upgrading opensaml-saml-impl.-->
+				<exclusion>
+					<groupId>org.apache.velocity</groupId>
+					<artifactId>velocity</artifactId>
+				</exclusion>
+				<!-- Excluded because we are already using bcprov-jdk18on as a dependency.-->
+				<exclusion>
+					<groupId>org.bouncycastle</groupId>
+					<artifactId>bcprov-jdk15on</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
+
+		<dependency>
+			<!-- Fix CVE-2020-13936 by replacing velocity with new version of velocity-engine-core.
+                 TODO Remove this property after upgrading opensaml-saml-impl.-->
+			<groupId>org.apache.velocity</groupId>
+			<artifactId>velocity-engine-core</artifactId>
+			<version>2.3</version>
+		</dependency>
+
+
 		<dependency>
 		    <groupId>org.apache.santuario</groupId>
 		    <artifactId>xmlsec</artifactId>
@@ -59,6 +82,21 @@
 		    <artifactId>junit-jupiter-engine</artifactId>
 		    <version>5.5.0</version>
 		    <scope>test</scope>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>org.opensaml</groupId>
+			<artifactId>xmltooling</artifactId>
+			<version>1.4.5</version>
+		</dependency>
+		<!--		<dependency>-->
+<!--			<groupId>org.opensaml</groupId>-->
+<!--			<artifactId>xmltooling</artifactId>-->
+<!--			<version>1.4.5</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--			<groupId>org.opensaml</groupId>-->
+<!--			<artifactId>opensaml-xmlsec-impl</artifactId>-->
+<!--			<version>3.3.0</version>-->
+<!--		</dependency>-->
 	</dependencies>
 </project>
